@@ -1,0 +1,16 @@
+@startuml
+
+class Produk {
+  +id
+  +nama
+  +harga
+}
+
+class Transaksi {
+  +id
+  +tanggal
+}
+
+Produk -- Transaksi
+
+@enduml

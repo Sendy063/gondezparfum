@@ -1,0 +1,41 @@
+@startuml
+
+|Admin|
+
+start
+
+:Membuka menu laporan;
+
+:Pilih periode laporan;
+
+|Frontend|
+
+:Request data laporan;
+
+|Backend|
+
+:Proses statistik penjualan;
+
+|Database|
+
+:Ambil data transaksi;
+
+|Backend|
+
+:Hitung total penjualan;
+
+:Hitung statistik transaksi;
+
+|Frontend|
+
+:Tampilkan tabel laporan;
+
+:Tampilkan grafik penjualan;
+
+|Admin|
+
+:Melihat laporan penjualan;
+
+stop
+
+@enduml

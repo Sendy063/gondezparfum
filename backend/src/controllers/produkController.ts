@@ -1,109 +1,231 @@
-// src/controllers/produkController.ts
 import { Request, Response } from "express";
+
 import { db } from "../config/db";
 
-// GET semua produk
-export const getProduk = (req: Request, res: Response) => {
-  db.query("SELECT * FROM produk ORDER BY id DESC", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+// ======================
+// GET SEMUA PRODUK
+// ======================
+
+export const getProduk = async (req: Request, res: Response) => {
+  try {
+    const [results]: any = await db.query(
+      "SELECT * FROM produk ORDER BY id DESC",
+    );
+
     res.json(results);
-  });
+  } catch (err: any) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
 };
 
-// GET produk by ID
-export const getProdukById = (req: Request, res: Response) => {
-  const id = req.params.id;
+// ======================
+// GET PRODUK BY ID
+// ======================
 
-  db.query("SELECT * FROM produk WHERE id = ?", [id], (err, results: any) => {
-    if (err) return res.status(500).json({ error: err.message });
+export const getProdukById = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    const [results]: any = await db.query("SELECT * FROM produk WHERE id = ?", [
+      id,
+    ]);
 
     if (results.length === 0) {
-      return res.status(404).json({ message: "Produk tidak ditemukan" });
+      return res.status(404).json({
+        message: "Produk tidak ditemukan",
+      });
     }
 
     res.json(results[0]);
-  });
+  } catch (err: any) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
 };
 
-// CREATE produk (dengan gambar)
-export const createProduk = (req: any, res: Response) => {
-  const { nama, kategori, deskripsi, harga_per_ml, stok_ml } = req.body;
+// ======================
+// CREATE PRODUK
+// ======================
 
-  // ambil file gambar
-  const image = req.file ? req.file.filename : null;
+export const createProduk = async (req: any, res: Response) => {
+  try {
+    const {
+      nama,
+      kategori,
+      deskripsi,
+      harga_per_ml,
+      harga_beli_per_ml,
+      stok_ml,
+    } = req.body;
 
-  if (!nama || !harga_per_ml) {
-    return res.status(400).json({ message: "Nama & harga wajib diisi" });
-  }
+    const image = req.file ? req.file.filename : null;
 
-  db.query(
-    `INSERT INTO produk 
-    (nama, kategori, deskripsi, harga_per_ml, stok_ml, image) 
-    VALUES (?, ?, ?, ?, ?, ?)`,
-    [nama, kategori, deskripsi, harga_per_ml, stok_ml, image],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
+    // VALIDASI
 
-      res.json({ message: "Produk berhasil ditambahkan" });
-    }
-  );
-};
-
-//Update produk (dengan gambar)
-export const updateProduk = (req: any, res: Response) => {
-  const id = req.params.id;
-
-  const {
-    nama,
-    kategori,
-    deskripsi,
-    harga_per_ml,
-    stok_ml,
-  } = req.body;
-
-  const image = req.file ? req.file.filename : null;
-
-  let query = `UPDATE produk SET 
-    nama = COALESCE(?, nama),
-    kategori = COALESCE(?, kategori),
-    deskripsi = COALESCE(?, deskripsi),
-    harga_per_ml = COALESCE(?, harga_per_ml),
-    stok_ml = COALESCE(?, stok_ml)
-  `;
-
-  let values: any[] = [
-    nama,
-    kategori,
-    deskripsi,
-    harga_per_ml,
-    stok_ml,
-  ];
-
-  if (image) {
-    query += ", image = ?";
-    values.push(image);
-  }
-
-  query += " WHERE id = ?";
-  values.push(id);
-
-  db.query(query, values, (err) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json(err);
+    if (
+      !nama ||
+      harga_beli_per_ml === undefined ||
+      harga_beli_per_ml === "" ||
+      harga_beli_per_ml === null
+    ) {
+      return res.status(400).json({
+        message: "Nama & harga beli wajib diisi",
+      });
     }
 
-    res.json({ message: "Update berhasil" });
-  });
+    // INSERT
+
+    await db.query(
+      `
+      INSERT INTO produk
+      (
+        nama,
+        kategori,
+        deskripsi,
+        harga_per_ml,
+        harga_beli_per_ml,
+        stok_ml,
+        image
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        nama,
+        kategori,
+        deskripsi,
+        harga_per_ml,
+        harga_beli_per_ml,
+        stok_ml,
+        image,
+      ],
+    );
+
+    res.json({
+      message: "Produk berhasil ditambahkan",
+    });
+  } catch (err: any) {
+    console.error("CREATE PRODUK ERROR:");
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message,
+      sqlMessage: err.sqlMessage,
+      code: err.code,
+    });
+  }
 };
 
-// DELETE produk
-export const deleteProduk = (req: Request, res: Response) => {
-  const id = req.params.id;
+// ======================
+// UPDATE PRODUK
+// ======================
 
-  db.query("DELETE FROM produk WHERE id=?", [id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
+export const updateProduk = async (req: any, res: Response) => {
+  try {
+    const id = req.params.id;
 
-    res.json({ message: "Produk berhasil dihapus" });
-  });
+    const { nama, kategori, deskripsi, harga_per_ml, stok_ml } = req.body;
+
+    const image = req.file ? req.file.filename : null;
+
+    let query = `
+      UPDATE produk SET
+        nama = COALESCE(?, nama),
+        kategori = COALESCE(?, kategori),
+        deskripsi = COALESCE(?, deskripsi),
+        harga_per_ml = COALESCE(?, harga_per_ml),
+        stok_ml = COALESCE(?, stok_ml)
+    `;
+
+    let values: any[] = [nama, kategori, deskripsi, harga_per_ml, stok_ml];
+
+    // UPDATE IMAGE
+
+    if (image) {
+      query += ", image = ?";
+
+      values.push(image);
+    }
+
+    // WHERE
+
+    query += " WHERE id = ?";
+
+    values.push(id);
+
+    await db.query(query, values);
+
+    res.json({
+      message: "Produk berhasil diupdate",
+    });
+  } catch (err: any) {
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};
+
+// ======================
+// RESTOCK PRODUK
+// ======================
+
+export const restockProduk = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    const { stok_ml } = req.body;
+
+    // VALIDASI
+
+    if (!stok_ml) {
+      return res.status(400).json({
+        message: "Jumlah restock wajib diisi",
+      });
+    }
+
+    // UPDATE STOK
+
+    await db.query(
+      `
+      UPDATE produk
+      SET stok_ml = stok_ml + ?
+      WHERE id = ?
+      `,
+      [stok_ml, id],
+    );
+
+    res.json({
+      message: "Restock berhasil",
+    });
+  } catch (err: any) {
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};
+
+// ======================
+// DELETE PRODUK
+// ======================
+
+export const deleteProduk = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    await db.query("DELETE FROM produk WHERE id=?", [id]);
+
+    res.json({
+      message: "Produk berhasil dihapus",
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
 };

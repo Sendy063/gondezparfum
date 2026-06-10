@@ -1,0 +1,24 @@
+@startuml
+
+actor Pelanggan
+
+participant "ProdukKatalog.tsx" as Frontend
+participant "produkRoute" as Route
+participant "produkController.getProduk" as Controller
+database "produk" as DB
+
+Pelanggan -> Frontend : Membuka katalog produk
+
+Frontend -> Route : GET /api/produk
+
+Route -> Controller : getProduk()
+
+Controller -> DB : SELECT * FROM produk
+
+DB --> Controller : Data produk
+
+Controller --> Frontend : Response data produk
+
+Frontend --> Pelanggan : Tampilkan katalog parfum
+
+@enduml

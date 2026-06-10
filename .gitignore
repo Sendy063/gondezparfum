@@ -1,0 +1,13 @@
+# Mengabaikan semua folder node_modules di mana pun posisinya
+**/node_modules/
+
+# Mengabaikan folder upload backend
+backend/uploads/
+backend/src/controllers.zip
+
+# Mengabaikan file environment / rahasia
+.env
+.env.*
+
+# Mengabaikan log sampah npm
+*.log

@@ -1,4 +1,3 @@
-// src/models/productModel.ts
 export interface Produk {
   id: number;
   nama: string;
@@ -6,5 +5,6 @@ export interface Produk {
   deskripsi: string;
   harga_per_ml: number;
   stok_ml: number;
+  image?: string;
   created_at: string;
 }
